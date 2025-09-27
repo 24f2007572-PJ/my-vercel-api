@@ -1,8 +1,56 @@
-# api/index.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import pandas as pd
+import numpy as np
+from pathlib import Path
 
 app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"message": "Hello, World!"}
+# Enable CORS for POST requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
+
+# Load telemetry CSV once at startup
+DATA_PATH = Path(__file__).parent.parent / "telemetry.csv"
+try:
+    df = pd.read_csv(DATA_PATH)
+except FileNotFoundError:
+    df = pd.DataFrame(columns=["region", "latency_ms", "uptime"])  # fallback empty
+
+@app.post("/")
+async def metrics(request: Request):
+    body = await request.json()
+    regions = body.get("regions", [])
+    threshold_ms = body.get("threshold_ms", 180)
+
+    results = {}
+
+    for region in regions:
+        region_data = df[df["region"] == region]
+        if region_data.empty:
+            results[region] = {
+                "avg_latency": None,
+                "p95_latency": None,
+                "avg_uptime": None,
+                "breaches": 0
+            }
+            continue
+
+        avg_latency = float(region_data["latency_ms"].mean())
+        p95_latency = float(np.percentile(region_data["latency_ms"], 95))
+        avg_uptime = float(region_data["uptime"].mean())
+        breaches = int((region_data["latency_ms"] > threshold_ms).sum())
+
+        results[region] = {
+            "avg_latency": avg_latency,
+            "p95_latency": p95_latency,
+            "avg_uptime": avg_uptime,
+            "breaches": breaches
+        }
+
+    return JSONResponse(content=results)
