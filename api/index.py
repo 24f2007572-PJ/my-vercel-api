@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+celfrom fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import pandas as pd
@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # Load telemetry CSV once at startup
-DATA_PATH = Path(__file__).parent.parent / "telemetry.csv"
+DATA_PATH = Path(__file__).parent.parent / "q-vercel-latency.csv"
 try:
     df = pd.read_csv(DATA_PATH)
 except FileNotFoundError:
