@@ -1,9 +1,10 @@
-celfrom fastapi import FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pathlib import Path
 import pandas as pd
 import numpy as np
-from pathlib import Path
+import json
 
 app = FastAPI()
 
@@ -15,10 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load telemetry CSV once at startup
-DATA_PATH = Path(__file__).parent.parent / "q-vercel-latency.csv"
+# Load telemetry JSON at startup
+DATA_PATH = Path(__file__).parent.parent / "q-vercel-latency.json"
 try:
-    df = pd.read_csv(DATA_PATH)
+    with open(DATA_PATH) as f:
+        telemetry_list = json.load(f)
+    df = pd.DataFrame(telemetry_list)
 except FileNotFoundError:
     df = pd.DataFrame(columns=["region", "latency_ms", "uptime"])  # fallback empty
 
