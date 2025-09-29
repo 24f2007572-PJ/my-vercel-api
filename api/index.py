@@ -10,10 +10,11 @@ app = FastAPI()
 # Enable CORS for POST requests from any origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],      # <- allows all origins
-    allow_methods=["POST"],   # <- allows POST requests
-    allow_headers=["*"],      # <- allows all headers
+    allow_origins=["*"],      # allow requests from any origin
+    allow_methods=["POST"],   # allow only POST requests
+    allow_headers=["*"],      # allow all headers
 )
+
 
 # Load telemetry JSON (put it inside the api/ folder)
 TELEMETRY_FILE = os.path.join(os.path.dirname(__file__), "q-vercel-latency.json")
